@@ -1,0 +1,16 @@
+version: '3'
+services:
+
+  sleek-airflow:
+
+    image: airflow-docker-demo:latest
+
+    volumes:
+
+      - "E:/Project Folder/1. Voyage Analytics Integrating MLOps in Travel/Apache Airflow/airflow-docker-demo/airflow/dags:/opt/airflow/dags"
+      
+    ports:
+
+      - "8080:8080"
+
+    command: airflow standalone
