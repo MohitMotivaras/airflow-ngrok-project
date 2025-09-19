@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import mlflow
+import mlflow.sklearn
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
@@ -19,10 +21,8 @@ class RandomForestModel:
         return MSE, R2
 
     def random_forest(self):
+        # Split data
         X_train, X_test, Y_train, Y_test = train_test_split(self.X, self.Y, test_size=0.25, random_state=42)
-        print("The shape of training set is", X_train.shape, Y_train.shape)
-        print("The shape of testing set is", X_test.shape, Y_test.shape)
-        print("\n")
 
         param_dict = {
             'n_estimators': [int(x) for x in np.linspace(10, 300, 100)],
@@ -33,40 +33,42 @@ class RandomForestModel:
         }
 
         rf_model = RandomForestRegressor()
-
         rf_grid = RandomizedSearchCV(estimator=rf_model,
                                      param_distributions=param_dict,
                                      cv=5, verbose=2, scoring='r2')
 
-        rf_grid.fit(X_train, Y_train)
+        # MLflow tracking
+        with mlflow.start_run():
+            rf_grid.fit(X_train, Y_train)
 
-        print(rf_grid.best_estimator_)
-        rf_optimal_model = rf_grid.best_estimator_
-        print(rf_grid.best_params_)
+            # Best model
+            rf_optimal_model = rf_grid.best_estimator_
+            print("Best Model:", rf_optimal_model)
+            print("Best Params:", rf_grid.best_params_)
 
-        Y_train_pred = rf_optimal_model.predict(X_train)
-        Y_test_pred = rf_optimal_model.predict(X_test)
+            # Predictions
+            Y_train_pred = rf_optimal_model.predict(X_train)
+            Y_test_pred = rf_optimal_model.predict(X_test)
 
-        print("Train Set Metrics:")
-        print("----------------------------------------------")
-        self.evaluate_metrics(Y_train, Y_train_pred)
-        print("\n")
+            # Metrics
+            print("Train Set Metrics:")
+            self.evaluate_metrics(Y_train, Y_train_pred)
 
-        print("Test Set Metrics")
-        print("----------------------------------------------")
-        metrics = self.evaluate_metrics(Y_test, Y_test_pred)
-        print("\n")
-        r2_rf = metrics[1]
+            print("\nTest Set Metrics:")
+            MSE, R2 = self.evaluate_metrics(Y_test, Y_test_pred)
 
-        pred = pd.DataFrame({'Actual Value': Y_test,
-                              'Predicted Value': Y_test_pred})
-        print("The top 5 rows of actual vs predicted values\n", pred.head())
-        pred.to_csv("predictions.csv")
-        print("Predictions saved in a csv file!")
+            # Save predictions
+            pred = pd.DataFrame({'Actual Value': Y_test,
+                                  'Predicted Value': Y_test_pred})
+            pred.to_csv("predictions.csv")
+            print("Predictions saved in a csv file!")
 
-        return Y_test, Y_test_pred, r2_rf
+            # 🔹 Log to MLflow
+            mlflow.log_params(rf_grid.best_params_)
+            mlflow.log_metric("MSE", MSE)
+            mlflow.log_metric("R2", R2)
 
-# Example usage:
-# You would need to create an instance of RandomForestModel with your X and Y data and then call the random_forest method.
-# rf_model = RandomForestModel(X, Y)
-# rf_model.random_forest()
+            # Save the model in MLflow
+            mlflow.sklearn.log_model(rf_optimal_model, "random_forest_model")
+
+        return Y_test, Y_test_pred, R2

@@ -1,16 +1,14 @@
 version: '3'
 services:
-
   sleek-airflow:
-
-    image: airflow-docker-demo:latest
-
+    image: airflow-app:latest
     volumes:
-
       - "E:/Project Folder/1. Voyage Analytics Integrating MLOps in Travel/Apache Airflow/airflow-docker-demo/airflow/dags:/opt/airflow/dags"
-      
     ports:
+      - "9090:8080"
+    command: >
+      bash -c "airflow db migrate &&
+               airflow api-server -p 8080"
 
-      - "9090:9090"
 
-    command: airflow standalone
+

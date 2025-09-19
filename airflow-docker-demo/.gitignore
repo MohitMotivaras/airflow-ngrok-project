@@ -1,0 +1,23 @@
+# Ignore Airflow logs
+airflow/logs/
+airflow/logs/*
+airflow/dags/__pycache__/
+__pycache__/
+
+# SQLite DB & configs
+airflow/airflow.db
+airflow/airflow.cfg
+
+# Python cache
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# VSCode / IDE configs
+.vscode/
+.idea/
+
+# Docker volumes
+*/.env
+*.pid
