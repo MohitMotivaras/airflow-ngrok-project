@@ -9,6 +9,3 @@ services:
     command: >
       bash -c "airflow db migrate &&
                airflow api-server -p 8080"
-
-
-
